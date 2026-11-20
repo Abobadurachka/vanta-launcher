@@ -1,0 +1,2 @@
+Vanta Launcher source code is provided for personal and educational use.
+Minecraft is a trademark of Mojang AB. Vanta Launcher is an independent community launcher and is not affiliated with or endorsed by Mojang or Microsoft.

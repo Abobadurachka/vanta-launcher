@@ -1,0 +1,33 @@
+VANTA LAUNCHER — CHANGELOG PRE-RELEASE
+======================================
+
+1.2.0-beta.3 — 20.11.2026
+-------------------------
++ GitHub update feed автоматически считывается из app-update.yml, встроенного в Windows Setup.
++ Для публикации GitHub явно используется channel: beta и releaseType: prerelease.
++ Добавлен PUBLISH-GITHUB.bat для безопасного запуска publish-скрипта без ручной смены PowerShell ExecutionPolicy.
++ Добавлены недостающие frontend-типы LauncherUpdateState, ModrinthBrowseOptions и ModrinthCategory.
++ После первой установки update-enabled beta.3 клиент проверяет релизы автоматически при запуске и каждые 10 минут.
+
+1.2.0-beta.2 — 20.11.2026
+-------------------------
++ Добавлена настройка автообновлений непосредственно в защищённой панели разработчика.
++ Реализованы два источника релизов: GitHub Releases и Generic HTTPS feed.
++ Добавлена проверка доступности публичного GitHub-репозитория и наличия update assets.
++ Добавлена проверка beta.yml для HTTPS feed с валидацией версии, имени файла и SHA-512.
++ Канал обновлений сохраняется между перезапусками и мигрирует старую конфигурацию { url }.
++ Автопроверка выполняется при запуске и каждые 10 минут; ручная проверка доступна во вкладке «Обновления».
++ Добавлен PUBLISH-GITHUB.bat для сборки и публикации Windows Pre-Release.
++ Токен публикации запрашивается скрытым вводом в PowerShell, не записывается в проект и не встраивается в клиент.
++ На странице обновлений появилась кнопка перехода к настройке канала и индикация подключённого источника.
+
+1.2.0-beta.1 — 20.11.2026
+-------------------------
++ Aurora Glass redesign, high-resolution artwork, new Vanta branding.
++ Web Audio UI sounds with on/off toggle and motion effects.
++ Local developer admin panel with scrypt-hashed credentials and lockout.
++ Preserved existing Minecraft profile data folder.
+
+1.1.0-beta.2 — 20.11.2026
+-------------------------
++ Fixed electron-updater release notes typing for nullable note values.
