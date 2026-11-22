@@ -1,7 +1,7 @@
 {
   "name": "vanta-launcher",
-  "version": "1.2.0-beta.3",
-  "description": "Vanta Launcher — Minecraft Java launcher with local developer console and configured Pre-Release updates",
+  "version": "1.3.0-beta.1",
+  "description": "Vanta Launcher — Minecraft Java launcher with full loader version catalogs and LAN friends",
   "author": "Vanta Launcher",
   "private": true,
   "main": "dist/main/main.js",
