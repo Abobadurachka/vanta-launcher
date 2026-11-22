@@ -1,3 +1,4 @@
+import { app } from 'electron';
 import { createWriteStream } from 'node:fs';
 import { mkdir, rename, rm } from 'node:fs/promises';
 import path from 'node:path';
@@ -27,7 +28,7 @@ async function fetchWithRetry(url: string, init: RequestInit, attempts = 3): Pro
 
 export async function fetchJson<T>(url: string): Promise<T> {
   const response = await fetchWithRetry(url, {
-    headers: { 'User-Agent': 'VantaLauncher/1.3.0-beta.1 (desktop launcher)' },
+    headers: { 'User-Agent': `VantaLauncher/${app.getVersion()} (desktop launcher)` },
     signal: AbortSignal.timeout(45_000)
   });
   if (!response.ok) throw new Error(`HTTP ${response.status}: ${url}`);
@@ -39,7 +40,7 @@ export async function downloadFile(url: string, destination: string, onProgress?
   const partial = `${destination}.part`;
   await rm(partial, { force: true });
   const response = await fetchWithRetry(url, {
-    headers: { 'User-Agent': 'VantaLauncher/1.3.0-beta.1 (desktop launcher)', ...extraHeaders },
+    headers: { 'User-Agent': `VantaLauncher/${app.getVersion()} (desktop launcher)`, ...extraHeaders },
     signal: AbortSignal.timeout(180_000),
     redirect: 'follow'
   });

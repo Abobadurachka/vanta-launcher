@@ -42,7 +42,35 @@ async function main() {
     }
   });
 
-  console.log('\nГотово: Pre-Release опубликован в GitHub Releases.');
+  // electron-updater exposes the GitHub release body as info.releaseNotes.
+  // Publish the project's release notes as that body after electron-builder uploads the assets.
+  const releaseNotes = fs.readFileSync(path.join(__dirname, '..', 'RELEASE_NOTES.md'), 'utf8');
+  const headers = {
+    Accept: 'application/vnd.github+json',
+    Authorization: `Bearer ${process.env.GH_TOKEN || process.env.GITHUB_TOKEN}`,
+    'X-GitHub-Api-Version': '2022-11-28',
+    'User-Agent': 'Vanta-Launcher-Release-Publisher'
+  };
+  const releasesResponse = await fetch(`https://api.github.com/repos/${match[1]}/${match[2]}/releases?per_page=100`, { headers });
+  if (!releasesResponse.ok) {
+    throw new Error(`Установщик опубликован, но не удалось получить релиз для добавления RELEASE_NOTES.md (HTTP ${releasesResponse.status}).`);
+  }
+  const releases = await releasesResponse.json();
+  const release = releases.find((item) => item.tag_name === `v${packageJson.version}` || item.tag_name === packageJson.version);
+  if (!release) {
+    throw new Error(`Установщик опубликован, но GitHub Release для версии ${packageJson.version} не найден; RELEASE_NOTES.md не прикреплён.`);
+  }
+  const patchResponse = await fetch(`https://api.github.com/repos/${match[1]}/${match[2]}/releases/${release.id}`, {
+    method: 'PATCH',
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ body: releaseNotes, prerelease: true })
+  });
+  if (!patchResponse.ok) {
+    throw new Error(`Установщик опубликован, но не удалось обновить описание релиза с RELEASE_NOTES.md (HTTP ${patchResponse.status}).`);
+  }
+
+  console.log('\nГотово: Pre-Release и RELEASE_NOTES.md опубликованы в GitHub Releases.');
+  console.log('electron-updater передаст описание релиза в info.releaseNotes; VANTA покажет его в карточке обновления.');
   console.log('Установленные клиенты с этим же каналом проверят его при старте и далее каждые 10 минут.');
 }
 

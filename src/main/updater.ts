@@ -35,16 +35,21 @@ let state: LauncherUpdateState = {
   feedName: null
 };
 
-type UpdateInfoLike = { releaseNotes?: string | Array<{ note?: string | null }> | null };
+type UpdateInfoLike = { version?: string; releaseNotes?: string | Array<{ note?: string | null }> | null };
 function notesFrom(info?: UpdateInfoLike): string[] {
   const value = info?.releaseNotes;
   if (!value) return [];
-  if (typeof value === 'string') return value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).slice(0, 12);
-  return value.flatMap((entry) => typeof entry.note === 'string' ? entry.note.split(/\r?\n/) : []).map((line) => line.trim()).filter(Boolean).slice(0, 12);
+  const blocks = typeof value === 'string' ? [value] : value.map((entry) => entry?.note ?? '');
+  const normalized = blocks
+    .flatMap((block) => block.split(/\r?\n/))
+    .map((line) => line.trim().replace(/^\s*(?:[-*•]\s+|\d+[.)]\s+)/, '').trim())
+    .filter((line) => line.length > 0 && !/^#{1,6}\s/.test(line) && !/^Дата:/i.test(line) && !/^[-_=]{3,}$/.test(line));
+  return [...new Set(normalized)].slice(0, 12);
 }
 function publish(patch: Partial<LauncherUpdateState>) {
-  state = { ...state, ...patch };
-  sendState?.(state);
+  // package.json is the single source of truth for the installed launcher version.
+  state = { ...state, ...patch, currentVersion: app.getVersion() };
+  sendState?.({ ...state, notes: [...state.notes] });
 }
 
 function feedName(config: UpdateFeedConfig | null): string | null {
@@ -71,13 +76,24 @@ function attachUpdaterListeners() {
   autoUpdater.allowDowngrade = false;
 
   autoUpdater.on('checking-for-update', () => publish({ status: 'checking', message: 'Проверяем наличие новой Pre-Release версии…', percent: 0 }));
-  autoUpdater.on('update-available', (info) => publish({
-    status: 'available', availableVersion: info.version, percent: 0,
-    message: `Доступна новая версия VANTA Launcher ${info.version}.`, notes: notesFrom(info)
-  }));
+  autoUpdater.on('update-available', (info) => {
+    const availableVersion = info.version;
+    const notes = notesFrom({ version: info.version, releaseNotes: info.releaseNotes });
+    publish({
+      status: 'available',
+      availableVersion,
+      percent: 0,
+      message: `Доступна новая версия VANTA Launcher ${availableVersion}.`,
+      notes
+    });
+  });
   autoUpdater.on('update-not-available', () => publish({ status: 'not-available', availableVersion: null, message: 'Установлена последняя версия VANTA Launcher.', percent: 0, notes: [] }));
   autoUpdater.on('download-progress', (progress) => publish({ status: 'downloading', percent: Math.round(progress.percent), message: `Загрузка обновления · ${Math.round(progress.percent)}%` }));
-  autoUpdater.on('update-downloaded', (info) => publish({ status: 'downloaded', availableVersion: info.version, percent: 100, message: `Версия VANTA ${info.version} готова к установке.`, notes: notesFrom(info) }));
+  autoUpdater.on('update-downloaded', (info) => {
+    const availableVersion = info.version;
+    const notes = notesFrom({ version: info.version, releaseNotes: info.releaseNotes });
+    publish({ status: 'downloaded', availableVersion, percent: 100, message: `Версия VANTA ${availableVersion} готова к установке.`, notes });
+  });
   autoUpdater.on('error', (error) => publish({ status: 'error', message: `Не удалось проверить или загрузить обновление: ${error.message}` }));
 }
 
@@ -155,7 +171,10 @@ export async function testUpdateFeed(input: unknown): Promise<UpdateFeedTestResu
   return { ok: true, ready: true, latestVersion: version, message: `HTTPS-канал доступен. Найден beta.yml версии ${version}; манифест содержит имя файла и SHA-512.` };
 }
 
-export function getUpdateState() { return state; }
+export function getUpdateState(): LauncherUpdateState {
+  // Never return a stale version cached before a package/build update.
+  return { ...state, currentVersion: app.getVersion(), notes: [...state.notes] };
+}
 
 export async function initUpdater(onState: (value: LauncherUpdateState) => void) {
   sendState = onState;

@@ -79,6 +79,7 @@ export default function App() {
   const [friendsState, setFriendsState] = useState<FriendsState | null>(null);
 
   const selected = useMemo(() => profiles.find((profile) => profile.id === selectedId) || null, [profiles, selectedId]);
+  const launcherVersion = updateState?.currentVersion || '…';
   const notify = useCallback((message: string, error = false) => {
     setToast({ message, error });
     playUiSound(error ? 'error' : 'success');
@@ -294,7 +295,7 @@ export default function App() {
         </div>
         <div className="sidebar-bottom">
           <div className="connection-status"><span className="status-pulse" /> СИСТЕМА ГОТОВА</div>
-          <div className="sidebar-version">VANTA CLIENT <span>v1.3.0-beta.1</span></div>
+          <div className="sidebar-version">VANTA CLIENT <span>v{launcherVersion}</span></div>
         </div>
       </aside>
 
@@ -308,8 +309,8 @@ export default function App() {
           </div>
         </header>
         <div className="page-content" key={tab}>
-          {updateState?.status === 'available' && <div className="update-banner"><div className="update-banner-icon"><Sparkles size={19} /></div><div><b>Вышла новая версия лаунчера · {updateState.availableVersion}</b><span>Vanta Pre-Release доступен для установки</span></div><button onClick={() => void window.nebula.downloadUpdate()}><CloudDownload size={15} /> ОБНОВИТЬ</button></div>}
-          {updateState?.status === 'downloaded' && <div className="update-banner downloaded"><div className="update-banner-icon"><CheckCircle2 size={19} /></div><div><b>Обновление {updateState.availableVersion} скачано</b><span>Перезапусти лаунчер, чтобы применить обновление</span></div><button onClick={() => void window.nebula.installUpdate()}><RefreshCw size={15} /> ПЕРЕЗАПУСТИТЬ</button></div>}
+          {updateState?.status === 'available' && <div className="update-banner"><div className="update-banner-icon"><Sparkles size={19} /></div><div><b>Вышла новая версия лаунчера · {updateState.availableVersion}</b><span>Установлена версия {launcherVersion} · Vanta Pre-Release</span>{updateState.notes.length > 0 ? <ul className="update-banner-notes">{updateState.notes.slice(0, 2).map((note, index) => <li key={`${index}-${note}`}>{note}</li>)}</ul> : <span>Для этого релиза разработчик не добавил описание изменений.</span>}</div><button onClick={() => void window.nebula.downloadUpdate()}><CloudDownload size={15} /> ОБНОВИТЬ ДО {updateState.availableVersion}</button></div>}
+          {updateState?.status === 'downloaded' && <div className="update-banner downloaded"><div className="update-banner-icon"><CheckCircle2 size={19} /></div><div><b>Обновление {updateState.availableVersion} скачано</b><span>Текущая версия {launcherVersion} · перезапусти лаунчер, чтобы применить обновление</span>{updateState.notes.length > 0 ? <ul className="update-banner-notes">{updateState.notes.slice(0, 2).map((note, index) => <li key={`${index}-${note}`}>{note}</li>)}</ul> : <span>Для этого релиза разработчик не добавил описание изменений.</span>}</div><button onClick={() => void window.nebula.installUpdate()}><RefreshCw size={15} /> УСТАНОВИТЬ {updateState.availableVersion}</button></div>}
           {tab === 'home' && <HomeView profile={selected} runtime={runtime} username={username} setUsername={setUsername} progress={progress} busy={busy} checkReport={checkReport} checkingProfile={checkingProfile} onDiagnose={diagnose} onRepair={repair} onInstall={install} onLaunch={launch} onCreate={() => setCreateOpen(true)} onDelete={async () => {
             if (!selected || !window.confirm(`Удалить профиль «${selected.name}» и его файлы?`)) return;
             const state = await window.nebula.deleteProfile(selected.id);
@@ -352,7 +353,7 @@ export default function App() {
         </footer>
       </main>
 
-      {booting && <SplashScreen />}
+      {booting && <SplashScreen version={launcherVersion} />}
       {createOpen && <CreateProfileModal versions={versions} onClose={() => setCreateOpen(false)} onCreate={create} />}
       {catalog && selected && <CatalogModal type={catalog} profile={selected} onClose={() => setCatalog(null)} onInstalled={async (message) => {
         setCatalog(null); notify(message); await refreshState(); setRefreshKey((value) => value + 1);
@@ -863,8 +864,8 @@ function CatalogModal({ type, profile, onClose, onInstalled }: { type: 'mod' | '
   </div>;
 }
 
-function SplashScreen() {
-  return <div className="vanta-splash"><div className="splash-background" /><div className="splash-center"><div className="splash-logo"><img src={vantaLogo} alt="Vanta" /></div><div className="splash-wordmark">VANTA</div><div className="splash-subtitle">YOUR WORLD. YOUR RULES.</div><div className="splash-loader"><i /></div><div className="splash-version">PRE-RELEASE · 1.3.0-beta.1</div></div><div className="splash-footer"><span>INITIALIZING GAME ENVIRONMENT</span><span>MOJANG / MODRINTH / VANTA CORE</span></div></div>;
+function SplashScreen({ version }: { version: string }) {
+  return <div className="vanta-splash"><div className="splash-background" /><div className="splash-center"><div className="splash-logo"><img src={vantaLogo} alt="Vanta" /></div><div className="splash-wordmark">VANTA</div><div className="splash-subtitle">YOUR WORLD. YOUR RULES.</div><div className="splash-loader"><i /></div><div className="splash-version">PRE-RELEASE · {version}</div></div><div className="splash-footer"><span>INITIALIZING GAME ENVIRONMENT</span><span>MOJANG / MODRINTH / VANTA CORE</span></div></div>;
 }
 
 function FriendsView({ state, profiles, onAdd, onRemove, onJoin, onManualPort, notify }: {
@@ -915,6 +916,7 @@ function FriendsView({ state, profiles, onAdd, onRemove, onJoin, onManualPort, n
 
 function UpdatesView({ state, onCheck, onDownload, onInstall, onConfigure }: { state: LauncherUpdateState | null; onCheck: () => void; onDownload: () => void; onInstall: () => void; onConfigure: () => void }) {
   const releaseNotes = [
+    { version: '1.3.0-beta.2', date: '22.11.2026', tag: 'PRE-RELEASE', items: ['Текущая версия лаунчера во всех интерфейсных блоках берётся из app.getVersion() и package.json.', 'Состояние автообновления передаёт новую версию из info.version и список изменений из info.releaseNotes.', 'Новая версия и заметки релиза отображаются в баннере обновления, на кнопке скачивания и в карточке релиза.', 'Добавлен RELEASE_NOTES.md в корень проекта; версия package.json повышена до 1.3.0-beta.2.'] },
     { version: '1.3.0-beta.1', date: '22.11.2026', tag: 'PRE-RELEASE', items: ['Полный список доступных версий Fabric и NeoForge по официальным метаданным; совместимость проверяется для выбранной версии Minecraft.', 'Список Forge расширен через Maven metadata, а Vanilla продолжает получать все версии из Mojang manifest.', 'Добавлена вкладка «Друзья» с уникальным VANTA-кодом, добавлением контактов и статусом присутствия в одной локальной сети.', 'VANTA отслеживает собственный LAN-анонс Minecraft и показывает порт открытого мира; ручной ввод порта оставлен как запасной способ.', 'Подключение к другу запускает тот же установленный профиль и использует Quick Play для Minecraft 1.20+ или legacy server args для старых версий.', 'Профили, миры, моды и настройки сохраняются в прежнем каталоге пользовательских данных.'] },
     { version: '1.2.0-beta.2', date: '20.11.2026', tag: 'PRE-RELEASE', items: ['Добавлена настройка канала автообновлений через панель разработчика.', 'Поддержаны GitHub Releases и Generic HTTPS; добавлена проверка доступности репозитория и beta.yml.', 'Добавлен сценарий публикации Pre-Release, автопроверка при запуске и каждые 10 минут.', 'Сохранена совместимость со старым HTTPS-конфигом update-feed.json.'] },
     { version: '1.2.0-beta.1', date: '20.11.2026', tag: 'PRE-RELEASE', items: ['Полностью обновлена визуальная система: Aurora Glass, кинематографическая панорама и адаптивные карточки.', 'Добавлены мягкие звуки интерфейса с выключателем и синтезом через Web Audio API.', 'Создана локальная панель разработчика с логином, хешированием пароля scrypt и автоматической блокировкой попыток входа.', 'Добавлены системная телеметрия, просмотр последних строк журнала и локальное обслуживание.', 'Сохранена совместимость с прежним каталогом профилей Minecraft.'] },
@@ -923,11 +925,11 @@ function UpdatesView({ state, onCheck, onDownload, onInstall, onConfigure }: { s
     { version: '1.0.3', date: '20.11.2026', tag: 'STABLE BASE', items: ['Починка сборки и диагностика Minecraft / Forge.', 'Сохранение launcher_profiles.json перед установкой Forge.', 'Проверка Java, библиотек, ресурсов и контрольных сумм файлов.'] }
   ];
   return <div className="section-layout updates-layout">
-    <div className="updates-heading"><div><span className="eyebrow"><span className="eyebrow-line" /> RELEASE CHANNEL</span><h1>ЖУРНАЛ <em>ОБНОВЛЕНИЙ</em><span className="title-dot">.</span></h1><p>История изменений Vanta Launcher и управление обновлениями клиента.</p></div><span className="prerelease-stamp">PRE-RELEASE<br /><b>1.3.0-beta.1</b></span></div>
-    <section className="update-control-panel"><div className="update-control-icon"><RefreshCw size={22} /></div><div className="update-control-copy"><span className="panel-kicker">LIVE UPDATE CHANNEL</span><h3>{state?.status === 'available' ? `Доступна версия ${state.availableVersion}` : state?.status === 'downloaded' ? 'Обновление готово к установке' : 'Проверка обновлений'}</h3><p>{state?.message || 'Получаем состояние канала обновлений…'}</p>{state?.status === 'downloading' && <div className="update-download-track"><i style={{ width: `${state.percent}%` }} /></div>}</div><div className="update-control-actions">{state?.status === 'available' ? <button className="update-main-button" onClick={onDownload}><CloudDownload size={16} /> СКАЧАТЬ</button> : state?.status === 'downloaded' ? <button className="update-main-button" onClick={onInstall}><RefreshCw size={16} /> ПЕРЕЗАПУСТИТЬ</button> : <button className="update-main-button" onClick={onCheck} disabled={state?.status === 'checking' || state?.status === 'downloading'}><RefreshCw size={16} className={state?.status === 'checking' ? 'spin' : ''} /> ПРОВЕРИТЬ</button>}</div></section>
+    <div className="updates-heading"><div><span className="eyebrow"><span className="eyebrow-line" /> RELEASE CHANNEL</span><h1>ЖУРНАЛ <em>ОБНОВЛЕНИЙ</em><span className="title-dot">.</span></h1><p>История изменений Vanta Launcher и управление обновлениями клиента.</p></div><span className="prerelease-stamp">PRE-RELEASE<br /><b>{state?.currentVersion || '…'}</b></span></div>
+    <section className="update-control-panel"><div className="update-control-icon"><RefreshCw size={22} /></div><div className="update-control-copy"><span className="panel-kicker">LIVE UPDATE CHANNEL</span><h3>{state?.status === 'available' ? `Доступна версия ${state.availableVersion}` : state?.status === 'downloaded' ? 'Обновление готово к установке' : 'Проверка обновлений'}</h3><p>{state?.message || 'Получаем состояние канала обновлений…'}</p>{state?.status === 'downloading' && <div className="update-download-track"><i style={{ width: `${state.percent}%` }} /></div>}</div><div className="update-control-actions">{state?.status === 'available' ? <button className="update-main-button" onClick={onDownload}><CloudDownload size={16} /> СКАЧАТЬ {state.availableVersion}</button> : state?.status === 'downloaded' ? <button className="update-main-button" onClick={onInstall}><RefreshCw size={16} /> ПЕРЕЗАПУСТИТЬ</button> : <button className="update-main-button" onClick={onCheck} disabled={state?.status === 'checking' || state?.status === 'downloading'}><RefreshCw size={16} className={state?.status === 'checking' ? 'spin' : ''} /> ПРОВЕРИТЬ</button>}</div></section>
     {state?.feedConfigured && <div className="update-feed-connected"><span className="connected-dot"/> ИСТОЧНИК: <b>{state.feedProvider === 'github' ? 'GITHUB RELEASES' : 'HTTPS FEED'}</b>{state.feedName && <code>{state.feedName}</code>}<span>· Автопроверка каждые 10 минут</span></div>}
     {!state?.feedConfigured && <div className="update-setup-note"><AlertTriangle size={17} /><div><b>Автообновления ещё не подключены.</b><span>Подключи публичный GitHub Releases или HTTPS-каталог в панели разработчика. Адрес больше не нужно прописывать в исходном коде.</span><button className="update-config-link" onClick={onConfigure}>ОТКРЫТЬ НАСТРОЙКИ КАНАЛА <ArrowUpRight size={13}/></button></div></div>}
-    {state?.status === 'available' && state.notes.length > 0 && <section className="release-card remote-release-card"><div className="release-card-head"><div><span>REMOTE RELEASE NOTES</span><h3>Новая версия {state.availableVersion}</h3></div></div><ul>{state.notes.map((item, index) => <li key={`${index}-${item}`}><Check size={14} />{item}</li>)}</ul></section>}
+    {state && (state.status === 'available' || state.status === 'downloading' || state.status === 'downloaded') && <section className="release-card remote-release-card"><div className="release-card-head"><div><span>REMOTE RELEASE NOTES</span><h3>Новая версия {state.availableVersion}</h3></div></div><ul>{state.notes.length > 0 ? state.notes.map((item, index) => <li key={`${index}-${item}`}><Check size={14} />{item}</li>) : <li><Check size={14} />В опубликованном релизе пока нет списка изменений.</li>}</ul></section>}
     <div className="release-list">{releaseNotes.map((release) => <article className="release-card" key={release.version}><div className="release-timeline"><i /></div><div className="release-main"><div className="release-card-head"><div><span>{release.tag}</span><h3>Vanta Launcher {release.version}</h3></div><time>{release.date}</time></div><ul>{release.items.map((item) => <li key={item}><Check size={14} />{item}</li>)}</ul></div></article>)}</div>
   </div>;
 }

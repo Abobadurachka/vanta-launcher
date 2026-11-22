@@ -468,3 +468,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .loader-unavailable-note svg,.loader-versions-note svg{flex:0 0 auto;margin-top:1px}
 @media(max-width:1000px){.friends-top-grid{grid-template-columns:1fr}.friends-host-panel{align-items:flex-start;flex-wrap:wrap}.friends-host-copy{min-width:calc(100% - 60px)}.friends-manual-port{margin-left:55px}}
 @media(max-width:700px){.friends-heading{align-items:flex-start;flex-direction:column}.friends-discovery-status{max-width:100%;text-align:left}.friend-card{align-items:flex-start;flex-wrap:wrap}.friend-main{min-width:calc(100% - 60px)}.friend-actions{margin-left:54px}.friends-manual-port{margin-left:0;flex-wrap:wrap}.friends-manual-port>label{width:100%}}
+
+/* Release-note preview in the live update banner. */
+.update-banner-notes{list-style:none;margin:2px 0 0;padding:0;display:grid;gap:3px}.update-banner-notes li{font-size:9px;line-height:1.45;color:#c4ddd7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:760px}.update-banner-notes li::before{content:'•';color:#9ff2c0;margin-right:6px}
+@media(max-width:900px){.update-banner{align-items:flex-start;flex-wrap:wrap}.update-banner>div:nth-child(2){min-width:calc(100% - 60px)}.update-banner-notes li{white-space:normal}.update-banner button{margin-left:49px}}
