@@ -3,6 +3,8 @@ import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { UpdateFeedConfig } from './types';
 
+export const UPDATE_CHANNEL = 'latest' as const;
+
 const configFile = () => path.join(app.getPath('userData'), 'NebulaLauncher', 'update-feed.json');
 
 function normalizeGenericUrl(input: string): string {
@@ -80,6 +82,8 @@ async function fromPackagedUpdateConfig(): Promise<UpdateFeedConfig | null> {
     if (match) values[match[1]] = match[2].replace(/^(["'])(.*)\1$/, '$2');
   }
 
+  if (values.channel && values.channel !== UPDATE_CHANNEL) return null;
+
   if (values.provider === 'github' && values.owner && values.repo) {
     return normalizeUpdateFeedConfig({ provider: 'github', owner: values.owner, repo: values.repo });
   }
@@ -92,7 +96,7 @@ async function fromPackagedUpdateConfig(): Promise<UpdateFeedConfig | null> {
 export async function getUpdateFeedConfig(): Promise<UpdateFeedConfig | null> {
   try {
     const saved = JSON.parse(await readFile(configFile(), 'utf8')) as Record<string, unknown>;
-    // Migrate the previous beta's { url } configuration without losing it.
+    // Migrate a previously saved { url } configuration without losing it; the endpoint now serves latest.yml.
     const candidate = saved.config ?? (typeof saved.url === 'string' && saved.url ? { provider: 'generic', url: saved.url } : null);
     if (candidate) return normalizeUpdateFeedConfig(candidate);
   } catch (error) {

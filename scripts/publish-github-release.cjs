@@ -18,14 +18,18 @@ async function main() {
   }
 
   const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
-  if (!String(packageJson.version).includes('-')) {
-    throw new Error(`Версия ${packageJson.version} не является Pre-Release. Для этого канала используй суффикс -beta.N.`);
+  if (!/^\d+\.\d+\.\d+$/.test(String(packageJson.version))) {
+    throw new Error(`Версия ${packageJson.version} должна быть стабильной SemVer без beta/alpha/rc-суффиксов, например 1.4.0.`);
   }
 
+  // Ignore inherited shell flags that could otherwise force a draft or prerelease.
+  delete process.env.EP_PRE_RELEASE;
+  delete process.env.EP_DRAFT;
+
   const { build, Platform, Arch } = require('electron-builder');
-  console.log(`\nVANTA RELEASE · ${packageJson.version}`);
+  console.log(`\nVANTA STABLE RELEASE · ${packageJson.version}`);
   console.log(`GitHub repository: ${match[1]}/${match[2]}`);
-  console.log('Сборка Windows x64 NSIS и публикация GitHub Pre-Release…\n');
+  console.log('Сборка Windows x64 NSIS и публикация стабильного GitHub Release…\n');
 
   await build({
     targets: Platform.WINDOWS.createTarget(['nsis'], Arch.x64),
@@ -35,12 +39,17 @@ async function main() {
         provider: 'github',
         owner: match[1],
         repo: match[2],
-        releaseType: 'prerelease',
-        channel: 'beta',
+        releaseType: 'release',
+        channel: 'latest',
         private: false
       }]
     }
   });
+
+  const updateManifest = path.join(__dirname, '..', 'release', 'latest.yml');
+  if (!fs.existsSync(updateManifest)) {
+    throw new Error('electron-builder завершился, но release/latest.yml не найден. Проверь, что версия package.json стабильная, а channel установлен в latest.');
+  }
 
   // electron-updater exposes the GitHub release body as info.releaseNotes.
   // Publish the project's release notes as that body after electron-builder uploads the assets.
@@ -63,13 +72,13 @@ async function main() {
   const patchResponse = await fetch(`https://api.github.com/repos/${match[1]}/${match[2]}/releases/${release.id}`, {
     method: 'PATCH',
     headers: { ...headers, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ body: releaseNotes, prerelease: true })
+    body: JSON.stringify({ body: releaseNotes, prerelease: false, draft: false })
   });
   if (!patchResponse.ok) {
     throw new Error(`Установщик опубликован, но не удалось обновить описание релиза с RELEASE_NOTES.md (HTTP ${patchResponse.status}).`);
   }
 
-  console.log('\nГотово: Pre-Release и RELEASE_NOTES.md опубликованы в GitHub Releases.');
+  console.log('\nГотово: Стабильный Release, latest.yml и RELEASE_NOTES.md опубликованы в GitHub Releases.');
   console.log('electron-updater передаст описание релиза в info.releaseNotes; VANTA покажет его в карточке обновления.');
   console.log('Установленные клиенты с этим же каналом проверят его при старте и далее каждые 10 минут.');
 }

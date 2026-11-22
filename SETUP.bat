@@ -5,7 +5,7 @@ title Vanta Launcher - Windows Setup Builder
 color 0B
 
 echo.
-echo  VANTA LAUNCHER ^| PRE-RELEASE WINDOWS SETUP
+echo  VANTA LAUNCHER ^| STABLE WINDOWS SETUP
  echo -----------------------------------
 
 where node >nul 2>nul

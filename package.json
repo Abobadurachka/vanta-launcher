@@ -1,7 +1,7 @@
 {
   "name": "vanta-launcher",
-  "version": "1.3.0-beta.2",
-  "description": "Vanta Launcher — Minecraft Java launcher with full loader version catalogs and LAN friends",
+  "version": "1.4.0",
+  "description": "Vanta Launcher — Minecraft Java launcher with premium Full HD responsive interface and stable updates",
   "author": "Vanta Launcher",
   "private": true,
   "main": "dist/main/main.js",
@@ -79,8 +79,8 @@
       ],
       "category": "Game"
     },
-    "detectUpdateChannel": true,
-    "generateUpdatesFilesForAllChannels": true,
+    "detectUpdateChannel": false,
+    "generateUpdatesFilesForAllChannels": false,
     "electronUpdaterCompatibility": ">=6"
   },
   "engines": {

@@ -1,7 +1,7 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-title VANTA Launcher - Publish Pre-Release
+title VANTA Launcher - Publish Stable Release
 powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0PUBLISH-GITHUB.ps1"
 if errorlevel 1 (
   echo.
@@ -10,5 +10,5 @@ if errorlevel 1 (
   exit /b 1
 )
 echo.
-echo Publishing completed.
+echo Stable release published.
 pause

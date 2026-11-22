@@ -2,7 +2,7 @@ $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
 
 Write-Host ''
-Write-Host 'VANTA LAUNCHER | PUBLISH PRE-RELEASE' -ForegroundColor Cyan
+Write-Host 'VANTA LAUNCHER | PUBLISH STABLE RELEASE' -ForegroundColor Cyan
 Write-Host '------------------------------------'
 Write-Host 'GitHub repository must be PUBLIC and use the format owner/repository.'
 Write-Host 'The build embeds this repository into app-update.yml, so installed clients can update automatically.'
@@ -29,14 +29,18 @@ $tokenPointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureTok
 try {
   $env:GH_TOKEN = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($tokenPointer)
   $env:VANTA_GITHUB_REPOSITORY = $repository
-  Write-Host '[2/2] Building and publishing GitHub Pre-Release…' -ForegroundColor Cyan
+  $env:EP_PRE_RELEASE = 'false'
+  $env:EP_DRAFT = 'false'
+  Write-Host '[2/2] Building and publishing GitHub Stable Release…' -ForegroundColor Cyan
   npm.cmd run release:github
   if ($LASTEXITCODE -ne 0) { throw 'Release build/publish failed. Review the output above.' }
 } finally {
   [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($tokenPointer)
   Remove-Item Env:GH_TOKEN -ErrorAction SilentlyContinue
   Remove-Item Env:VANTA_GITHUB_REPOSITORY -ErrorAction SilentlyContinue
+  Remove-Item Env:EP_PRE_RELEASE -ErrorAction SilentlyContinue
+  Remove-Item Env:EP_DRAFT -ErrorAction SilentlyContinue
 }
 
 Write-Host ''
-Write-Host 'Release published. Install this first update-enabled build once; later Pre-Releases will be detected automatically.' -ForegroundColor Green
+Write-Host 'Release published. Install this first update-enabled build once; later Stable Releases will be detected automatically.' -ForegroundColor Green

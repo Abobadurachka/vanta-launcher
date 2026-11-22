@@ -19,6 +19,7 @@ if (process.platform === 'win32') {
   app.setPath('userData', legacyUserData);
 }
 app.setName('Vanta Launcher');
+if (process.platform === 'win32') app.setAppUserModelId('com.nebula.launcher');
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -59,27 +60,42 @@ async function findProfile(id: string): Promise<LauncherProfile> {
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1440,
+    width: 1600,
     height: 900,
-    minWidth: 1120,
+    minWidth: 1180,
     minHeight: 720,
-    backgroundColor: '#070A12',
-    title: 'Vanta Launcher · Pre-Release',
+    center: true,
+    show: false,
+    resizable: true,
+    maximizable: true,
+    backgroundColor: '#080B12',
+    title: `Vanta Launcher · ${app.getVersion()}`,
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false
+      sandbox: false,
+      spellcheck: false
     }
   });
+  // Electron/Chromium automatically uses the Windows device scale factor (100/125/150%).
+  // Keep browser zoom at 100% so CSS layout uses device-independent pixels and vector SVGs
+  // remain crisp instead of rasterizing the whole renderer at an artificial scale.
+  mainWindow.webContents.setZoomFactor(1);
+  mainWindow.once('ready-to-show', () => mainWindow?.show());
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith('https://')) shell.openExternal(url);
     return { action: 'deny' };
   });
   const devUrl = process.env.VITE_DEV_SERVER_URL;
-  if (devUrl) mainWindow.loadURL(devUrl);
-  else mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
+  const loadTask = devUrl
+    ? mainWindow.loadURL(devUrl)
+    : mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
+  void loadTask.catch((error) => {
+    writeLog('ERROR', `Не удалось загрузить окно VANTA: ${error instanceof Error ? error.stack || error.message : String(error)}`);
+    mainWindow?.show();
+  });
   mainWindow.on('closed', () => { mainWindow = null; });
 }
 
